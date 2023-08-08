@@ -1,24 +1,31 @@
-import fs from 'fs'
+import fs from 'fs/promises'
 import cheerio from 'cheerio'
 import puppeteer from 'puppeteer'
 import { config } from './config.js'
 import { Parser } from '@json2csv/plainjs'
 
-export const initFunc = async (config, callback) => {
-    const browser = await puppeteer.launch({})
+export const initFunc = async (config) => {
+    try {
+        const browser = await puppeteer.launch({ headless: true })
+        const page = await browser.newPage()
+        await page.goto(config.link, { waitUntil: 'domcontentloaded' })
 
-    const page = await browser.newPage()
-    await page.goto(config.link, {
-        waitUntil: 'domcontentloaded',
-    })
-    const html = await page.evaluate(() => document.body.innerHTML)
-    const $ = cheerio.load(html)
+        const html = await page.evaluate(() => document.body.innerHTML)
+        const wordlistsCrawl = extractWords(cheerio.load(html))
 
-    var wordlist = $('.top-g li')
-    var wordlistsCrawl = []
+        await saveData(wordlistsCrawl)
 
-    wordlist.each((index, element) => {
-        var model = {
+        await browser.close()
+        return wordlistsCrawl
+    } catch (error) {
+        console.error('Error during web scraping:', error)
+    }
+}
+
+const extractWords = ($) => {
+    const wordlist = $('.top-g li')
+    return wordlist
+        .map((index, element) => ({
             word: $(element).find('a').text(),
             meaning: $(element).find('a').text(),
             pos: $($(element).find('span')[0]).text(),
@@ -27,35 +34,25 @@ export const initFunc = async (config, callback) => {
                 config.mainURL +
                 $(element).find('.pron-uk').attr('data-src-ogg'),
             pron_us:
-                'https://www.oxfordlearnersdictionaries.com' +
+                config.mainURL +
                 $(element).find('.pron-us').attr('data-src-ogg'),
-        }
-        wordlistsCrawl.push(model)
-    })
-
-    // save JSON
-    fs.writeFile('./data.json', JSON.stringify(wordlistsCrawl), function (err) {
-        if (err) throw err
-        console.log('json Saved!')
-    })
-
-    // convert CSV
-    try {
-        const parser = new Parser()
-        const csv = parser.parse(wordlistsCrawl)
-
-        fs.writeFile('./data.csv', csv, function (err) {
-            if (err) throw err
-            console.log('csv Saved!')
-        })
-    } catch (err) {
-        console.error(err)
-    }
-
-    callback(wordlistsCrawl)
-    await browser.close()
+        }))
+        .toArray()
 }
 
-initFunc(config, function (response) {
+const saveData = async (data) => {
+    try {
+        await fs.writeFile('./data.json', JSON.stringify(data))
+        console.log('json Saved!')
+
+        const csv = new Parser().parse(data)
+        await fs.writeFile('./data.csv', csv)
+        console.log('csv Saved!')
+    } catch (error) {
+        console.error('Error saving data:', error)
+    }
+}
+
+initFunc(config).then((response) => {
     console.log('crawler finished', response)
 })
