@@ -1,18 +1,29 @@
 {
-  "name": "words",
-  "version": "1.0.0",
-  "type": "module",
-  "description": "",
-  "types": "module",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@json2csv/plainjs": "^7.0.1",
-    "cheerio": "^1.0.0-rc.12",
-    "puppeteer": "^20.7.3"
-  }
+    "name": "oxfordlearnersdictionaries-crawler",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "",
+    "types": "module",
+    "main": "index.js",
+    "scripts": {
+        "format:check": "prettier --check .",
+        "format:write": "prettier --write .",
+        "lint:check": "eslint .",
+        "lint:fix": "eslint --fix .",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "prepare": "husky install"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@json2csv/plainjs": "^7.0.1",
+        "cheerio": "^1.0.0-rc.12",
+        "puppeteer": "^20.7.3"
+    },
+    "devDependencies": {
+        "eslint": "^8.46.0",
+        "eslint-config-prettier": "^9.0.0",
+        "prettier": "^3.0.1",
+        "husky": "^8.0.0"
+    }
 }
